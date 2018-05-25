@@ -1,4 +1,4 @@
-package com.android.tolin.app.livevideo;
+package com.android.tolin.app.live;
 
 import org.junit.Test;
 

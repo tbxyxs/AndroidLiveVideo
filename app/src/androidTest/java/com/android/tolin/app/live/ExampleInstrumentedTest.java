@@ -1,4 +1,4 @@
-package com.android.tolin.app.livevideo;
+package com.android.tolin.app.live;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
