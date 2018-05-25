@@ -26,7 +26,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Description:
  */
-public class CameraRenderer implements GLSurfaceView.Renderer {
+public class CameraRenderer extends AbsGLRenderer {
 
     private int textureId;
     private float[] matrix = new float[16];
@@ -88,7 +88,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-
+        super.onDrawFrame(gl);
         if (surfaceTexture != null) {
             surfaceTexture.updateTexImage();
         }
@@ -98,7 +98,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
 
     public void destroy() {
         mOesFilter.destroy();
-        surfaceTexture=null;
+        surfaceTexture = null;
     }
 
 }

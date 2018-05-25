@@ -2,6 +2,7 @@ package com.android.tolin.app.live.presenter;
 
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 
 import com.android.tolin.app.live.camera.CameraRenderer;
