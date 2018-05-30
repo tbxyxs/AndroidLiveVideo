@@ -135,7 +135,7 @@ public class Camera1<T extends Camera> implements ICamera<T> {
 
 
     @Override
-    public Size getPreviewSize() {
+    public Size getPreviewDataSize() {
         Point prePoint = camera1Option.getPreSize();
         return new Size(prePoint.x, prePoint.y);
     }

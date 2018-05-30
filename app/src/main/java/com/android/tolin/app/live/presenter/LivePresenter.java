@@ -1,12 +1,7 @@
 package com.android.tolin.app.live.presenter;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.android.tolin.app.live.camera.CameraRenderer;
@@ -49,14 +44,15 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
         mSurface.setOnFrameAvailableListener(this);
         cameraRender = new CameraRenderer(mGLSurfaceView.getResources(), mSurface, cameraId);
         cameraHelper = new CameraHelper(mGLSurfaceView, cameraId, mSurface);
-        Size preSize = cameraHelper.getCamera().getPreviewSize();
+        Size preSize = cameraHelper.getCamera().getPreviewDataSize();
         cameraRender.onSurfaceCreated(gl, config);
-        cameraRender.setDataSize(preSize.getWidth(), preSize.getHeight());
+        cameraRender.setCameraDataSize(preSize.getHeight(), preSize.getWidth());
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-         Log.v("surface1", "onSurfaceChanged");
+        Log.v("surface1", "onSurfaceChanged");
+        cameraRender.setPreviewViewSize(width, height);
         cameraRender.onSurfaceChanged(gl, width, height);
         cameraHelper.startPreview();
         using = false;

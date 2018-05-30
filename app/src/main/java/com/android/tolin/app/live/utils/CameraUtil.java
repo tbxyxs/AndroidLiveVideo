@@ -8,6 +8,8 @@ import android.hardware.Camera;
 import com.android.tolin.app.live.camera.Size;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class CameraUtil {
@@ -28,47 +30,76 @@ public class CameraUtil {
         }
     }
 
-//    /**
-//     * 获取相机的最佳预览分辨率
-//     *
-//     * @param sizes
-//     * @param width
-//     * @param height
-//     * @return
-//     */
-//    private static Size getCameraPreviewSize(Size[] sizes, int width, int height) {
-//        List<Size> collectorSizes = new ArrayList<>();
+    /**
+     * 获取相机与指定宽高相对应的最佳预览分辨率（最接近的分辨率，并不按宽高比率进行比较）
+     *
+     * @param sizes  相机支持的宽高
+     * @param width  指定宽
+     * @param height 指定高
+     * @return
+     */
+    public static Size chooseClosePreviewSize(Context context, List<Size> sizes, int width, int height) {
+        List<Size> collectorSizes = new ArrayList<>();
+        Configuration mConfiguration = context.getResources().getConfiguration(); //获取设置的配置信息
+        int ori = mConfiguration.orientation; //获取屏幕方向
+        int reqTmpWidth;
+        int reqTmpHeight;
+//        // 当屏幕为垂直的时候需要把宽高值进行调换，保证宽大于高
+        if (ori == mConfiguration.ORIENTATION_PORTRAIT) {  //竖屏
+            reqTmpWidth = height;
+            reqTmpHeight = width;
+        } else {
+            reqTmpWidth = width;
+            reqTmpHeight = height;
+        }
+        //先查找preview中是否存在与surfaceview相同宽高的尺寸
+        for (Size size : sizes) {
+            if ((size.getWidth() == reqTmpWidth) && (size.getHeight() == reqTmpHeight)) {
+                return size;
+            }
+        }
+        for (Size option : sizes) {
+            if (reqTmpWidth < reqTmpHeight) {
+                if (option.getWidth() > reqTmpWidth && option.getHeight() > reqTmpHeight) {
+                    collectorSizes.add(option);
+                }
+            } else {
+                if (option.getHeight() > reqTmpWidth && option.getWidth() > reqTmpHeight) {
+                    collectorSizes.add(option);
+                }
+            }
+        }
 //        for (Size option : sizes) {
 //            if (width > height) {
-//                if (option.width > width && option.height > height) {
+//                if (option.getWidth() > width && option.getHeight() > height) {
 //                    collectorSizes.add(option);
 //                }
 //            } else {
-//                if (option.height > width && option.width > height) {
+//                if (option.getHeight() > width && option.getWidth() > height) {
 //                    collectorSizes.add(option);
 //                }
 //            }
 //        }
-//        if (collectorSizes.width() > 0) {
-//            return Collections.min(collectorSizes, new Comparator<Size>() {
-//                @Override
-//                public int compare(Size s1, Size s2) {
-//                    return Long.signum(s1.width * s1.height - s2.width * s2.height);
-//                }
-//            });
-//        }
-//        return sizes[0];
-//    }
+        if (collectorSizes.size() > 0) {
+            return Collections.min(collectorSizes, new Comparator<Size>() {
+                @Override
+                public int compare(Size s1, Size s2) {
+                    return Long.signum(s1.getWidth() * s1.getHeight() - s2.getWidth() * s2.getHeight());
+                }
+            });
+        }
+        return sizes.get(0);
+    }
 
     /**
-     * 通过对比得到与宽高比最接近的尺寸（如果有相同尺寸，优先选择）
+     * 通过对比得到与宽高比最接近的尺寸（如果有相同尺寸，优先选择,但它可能存在会找到一个比率相同，但分辨率很低的尺寸）
      *
      * @param surfaceWidth  需要被进行对比的原宽
      * @param surfaceHeight 需要被进行对比的原高
-     * @param preSizeList   需要对比的预览尺寸列表
+     * @param preSizeList   camera支持的的预览尺寸列表
      * @return 得到与原宽高比例最接近的尺寸
      */
-    public static Size getCloselyPreSize(Context context, int surfaceWidth, int surfaceHeight, List<Size> preSizeList) {
+    public static Size chooseRatioPreviewSize(Context context, int surfaceWidth, int surfaceHeight, List<Size> preSizeList) {
         Configuration mConfiguration = context.getResources().getConfiguration(); //获取设置的配置信息
         int ori = mConfiguration.orientation; //获取屏幕方向
 

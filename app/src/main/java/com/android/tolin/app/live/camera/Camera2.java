@@ -3,7 +3,7 @@ package com.android.tolin.app.live.camera;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Point;
+import android.content.res.Configuration;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -83,7 +83,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
         initCameraOption();
         try {
             // 尝试获得相机开打关闭许可, 等待2500时间仍没有获得则排除异常
-            if (!mCameraOpenCloseLock.tryAcquire(3000, TimeUnit.MILLISECONDS)) {
+            if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
             cameraManager.openCamera(currCameraId, stateCallback, mHandler);
@@ -201,7 +201,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
     }
 
     @Override
-    public Size getPreviewSize() {
+    public Size getPreviewDataSize() {
         return computerPreviewSize(glSurfaceView);
     }
 
@@ -218,8 +218,9 @@ public class Camera2<T extends CameraManager> implements ICamera {
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             android.util.Size[] cSizes = map.getOutputSizes(SurfaceTexture.class);
             List<Size> sizes = CameraUtil.convertSize(cSizes);
-            mPreviewSize = CameraUtil.getCloselyPreSize(context, preWidth, preHeight, sizes);
-            Log.e("Camera2", "OptimalSize width: " + mPreviewSize.getWidth() + " height: " + mPreviewSize.getHeight());
+//            mPreviewSize = CameraUtil.chooseRatioPreviewSize(context, preWidth, preHeight, sizes);
+            mPreviewSize = CameraUtil.chooseClosePreviewSize(context, sizes, preWidth, preHeight);
+            Log.i("Camera2", "OptimalSize width: " + mPreviewSize.getWidth() + " height: " + mPreviewSize.getHeight());
             return new Size(mPreviewSize);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -239,6 +240,12 @@ public class Camera2<T extends CameraManager> implements ICamera {
         private void starPreview(CameraDevice cameraDevice) {
             try {
                 surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                int orientation = context.getResources().getConfiguration().orientation;
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    glSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                } else {
+                    glSurfaceView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+                }
                 Surface surface = new Surface(surfaceTexture);
                 //设置了一个具有输出Surface的CaptureRequest.Builder。
                 mPreviewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);

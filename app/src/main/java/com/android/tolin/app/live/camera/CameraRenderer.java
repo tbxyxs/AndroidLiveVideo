@@ -41,13 +41,25 @@ public class CameraRenderer extends AbsGLRenderer {
         this.cameraId = cameraId;
     }
 
-    public void setDataSize(int dataWidth, int dataHeight) {
+    /**
+     * 设置camera预览数据分辨率大小
+     *
+     * @param dataWidth
+     * @param dataHeight
+     */
+    public void setCameraDataSize(int dataWidth, int dataHeight) {
         this.dataWidth = dataWidth;
         this.dataHeight = dataHeight;
         calculateMatrix();
     }
 
-    public void setViewSize(int width, int height) {
+    /**
+     * 设置预览view控件的实际大小
+     *
+     * @param width
+     * @param height
+     */
+    public void setPreviewViewSize(int width, int height) {
         this.width = width;
         this.height = height;
         calculateMatrix();
@@ -81,7 +93,7 @@ public class CameraRenderer extends AbsGLRenderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        setViewSize(width, height);
+        setPreviewViewSize(width, height);
     }
 
     @Override

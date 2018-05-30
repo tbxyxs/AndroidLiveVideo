@@ -30,11 +30,11 @@ public interface ICamera<T> {
 
 
     /**
-     * 获取预览视图大小。
+     * 获取预览数据大小。
      *
      * @return
      */
-    Size getPreviewSize();
+    Size getPreviewDataSize();
 
     /**
      * 计算匹配相机预览大小 。
