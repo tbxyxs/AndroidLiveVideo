@@ -1,22 +1,14 @@
 package com.android.tolin.app.live.camera;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.util.Log;
 
 import com.android.tolin.app.live.utils.CameraUtil;
-import com.android.tolin.app.live.utils.DefaultOption;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -78,6 +70,7 @@ public class Camera1<T extends Camera> implements ICamera<T> {
 
     @Override
     public void stopPreview() {
+        context=null;
         relese();
     }
 
