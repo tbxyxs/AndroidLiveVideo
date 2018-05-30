@@ -58,8 +58,7 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
      * 版本小于21的使用旧版camera api
      */
     private void initVerLess21Camera() {
-        mCamera = (T) new Camera1(Integer.valueOf(cameraId));
-        mCamera.setPreviewTexture(surfaceTexture);
+        mCamera = (T) new Camera1(glSurfaceView, surfaceTexture, cameraId);
     }
 
     @Override

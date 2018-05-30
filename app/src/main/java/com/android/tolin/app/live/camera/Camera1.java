@@ -1,13 +1,20 @@
 package com.android.tolin.app.live.camera;
 
+import android.content.Context;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.util.Log;
 
+import com.android.tolin.app.live.utils.CameraUtil;
 import com.android.tolin.app.live.utils.DefaultOption;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -17,27 +24,36 @@ import java.util.List;
  */
 public class Camera1<T extends Camera> implements ICamera<T> {
     private final static String TAG = Camera1.class.getSimpleName();
-    private Camera1Option camera1Option;
     private Camera c = null;
-    private SurfaceTexture surfaceTexture;
-    private int currCameraId = 0;
+    private WeakReference<AbsGLSurfaceView> glSurfaceView;
+    private WeakReference<SurfaceTexture> surfaceTexture;
+    private String currCameraId = "0";
     private boolean isPreview = false;
+    private Context context;
 
 
-    public Camera1(int cameraId) {
-        openCamera(cameraId);
+    public Camera1(AbsGLSurfaceView glSurfaceView, SurfaceTexture surfaceTexture, String cameraId) {
+        this.glSurfaceView = new WeakReference<>(glSurfaceView);
+        this.surfaceTexture = new WeakReference<>(surfaceTexture);
+        this.currCameraId = cameraId;
+        this.context = glSurfaceView.getContext().getApplicationContext();
+        openCamera(currCameraId);
+        initCameraOption();
     }
 
-    private Camera openCamera(int cameraId) {
-        c = Camera.open(cameraId);
+    private void initCameraOption() {
+        if (c == null || glSurfaceView.get() == null) return;
+        Camera.Parameters parameters = c.getParameters();
+        computerPreviewSize(glSurfaceView.get());
+        Size size = getCameraPreviewDataSize();
+        parameters.setPreviewSize(size.getWidth(), size.getHeight());
+        c.setParameters(parameters);
+    }
+
+    private Camera openCamera(String cameraId) {
+        c = Camera.open(Integer.valueOf(cameraId));
         currCameraId = cameraId;
-        camera1Option = new Camera1Option(c);
         return c;
-    }
-
-    @Override
-    public void setPreviewTexture(SurfaceTexture surfaceTexture) {
-        this.surfaceTexture = surfaceTexture;
     }
 
     @Override
@@ -46,11 +62,11 @@ public class Camera1<T extends Camera> implements ICamera<T> {
             return;
         }
         if (c == null) {
-            openCamera(Integer.valueOf(getCurrCameraId()));
+            openCamera(getCurrCameraId());
         }
         if (c != null) {
             try {
-                c.setPreviewTexture(surfaceTexture);
+                c.setPreviewTexture(surfaceTexture.get());
                 c.startPreview();
                 isPreview = true;
             } catch (IOException e) {
@@ -98,7 +114,7 @@ public class Camera1<T extends Camera> implements ICamera<T> {
     }
 
     @Override
-    public boolean switchTo(int cameraId) {
+    public boolean switchTo(String cameraId) {
         if (c != null) {
             relese();
         }
@@ -109,10 +125,10 @@ public class Camera1<T extends Camera> implements ICamera<T> {
     @Override
     public void switchCamera() {
         if (cameraCount() > 1) {
-            if (currCameraId == 0) {
-                switchTo(1);
+            if ("0".equals(currCameraId)) {
+                switchTo("1");
             } else {
-                switchTo(0);
+                switchTo("0");
             }
         }
     }
@@ -133,116 +149,25 @@ public class Camera1<T extends Camera> implements ICamera<T> {
         return isPreview;
     }
 
-
     @Override
-    public Size getPreviewDataSize() {
-        Point prePoint = camera1Option.getPreSize();
-        return new Size(prePoint.x, prePoint.y);
+    public Size getCameraPreviewDataSize() {
+
+        return computerPreviewSize(glSurfaceView.get());
     }
 
     @Override
     public Size computerPreviewSize(AbsGLSurfaceView surfaceView) {
-        return null;
+        Size surfaceSize = new Size(glSurfaceView.get().getWidth(), glSurfaceView.get().getHeight());
+        int preWidth = surfaceSize.width;
+        int preHeight = surfaceSize.height;
+        List<Camera.Size> preSizes = c.getParameters().getSupportedPreviewSizes();
+        Camera.Size cSizes[] = {};
+        cSizes = preSizes.toArray(cSizes);
+        List<Size> sizes = CameraUtil.convertSize(cSizes);
+        Size mPreviewSize = CameraUtil.chooseClosePreviewSize(context, sizes, preWidth, preHeight);
+        // Log.i("Camera1", "OptimalSize width: " + mPreviewSize.getWidth() + " height: " + mPreviewSize.getHeight());
+        return new Size(mPreviewSize);
     }
 
 
-    private static class Camera1Option {
-        private final Camera mCamera;
-        private final DefaultOption dfOption;
-        /**
-         * 预览的尺寸
-         */
-        private Camera.Size preSize;
-        /**
-         * 实际的尺寸
-         */
-        private Camera.Size picSize;
-        private Point mPreSize;
-        private Point mPicSize;
-
-        public Camera1Option(Camera camera) {
-            this.mCamera = camera;
-            dfOption = new DefaultOption();
-            initOption();
-        }
-
-        private void initOption() {
-            if (mCamera != null) {
-                /**选择当前设备允许的预览尺寸*/
-                Camera.Parameters param = mCamera.getParameters();
-                preSize = getPropPreviewSize(param.getSupportedPreviewSizes(), dfOption.getRate(),
-                        dfOption.getPreSize().x);
-                picSize = getPropPictureSize(param.getSupportedPictureSizes(), dfOption.getRate(),
-                        dfOption.getPreSize().x);
-                param.setPictureSize(picSize.width, picSize.height);
-                param.setPreviewSize(preSize.width, preSize.height);
-
-                mCamera.setParameters(param);
-                Camera.Size pre = param.getPreviewSize();
-                Camera.Size pic = param.getPictureSize();
-                mPicSize = new Point(pic.height, pic.width);
-                mPreSize = new Point(pre.height, pre.width);
-            }
-        }
-
-        private Camera.Size getPropPreviewSize(List<Camera.Size> list, float th, int minWidth) {
-            Collections.sort(list, sizeComparator);
-
-            int i = 0;
-            for (Camera.Size s : list) {
-                if ((s.height >= minWidth) && equalRate(s, th)) {
-                    break;
-                }
-                i++;
-            }
-            if (i == list.size()) {
-                i = 0;
-            }
-            return list.get(i);
-        }
-
-        private Camera.Size getPropPictureSize(List<Camera.Size> list, float th, int minWidth) {
-            Collections.sort(list, sizeComparator);
-            int i = 0;
-            for (Camera.Size s : list) {
-                if ((s.height >= minWidth) && equalRate(s, th)) {
-                    break;
-                }
-                i++;
-            }
-            if (i == list.size()) {
-                i = 0;
-            }
-            return list.get(i);
-        }
-
-        private static boolean equalRate(Camera.Size s, float rate) {
-            float r = (float) (s.width) / (float) (s.height);
-            if (Math.abs(r - rate) <= 0.03) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private Comparator<Camera.Size> sizeComparator = new Comparator<Camera.Size>() {
-            public int compare(Camera.Size lhs, Camera.Size rhs) {
-                if (lhs.height == rhs.height) {
-                    return 0;
-                } else if (lhs.height > rhs.height) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-            }
-        };
-
-        public Point getPreSize() {
-            return mPreSize;
-        }
-
-        public Point getPicSize() {
-            return mPicSize;
-        }
-    }
 }

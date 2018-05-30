@@ -6,7 +6,6 @@ import android.graphics.SurfaceTexture;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
 public interface ICamera<T> {
-    void setPreviewTexture(SurfaceTexture surfaceTexture);
 
     void startPreview();
 
@@ -18,7 +17,7 @@ public interface ICamera<T> {
 
     void destory();
 
-    boolean switchTo(int cameraId);
+    boolean switchTo(String cameraId);
 
     void switchCamera();
 
@@ -34,7 +33,7 @@ public interface ICamera<T> {
      *
      * @return
      */
-    Size getPreviewDataSize();
+    Size getCameraPreviewDataSize();
 
     /**
      * 计算匹配相机预览大小 。

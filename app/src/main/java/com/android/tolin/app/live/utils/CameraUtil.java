@@ -59,7 +59,7 @@ public class CameraUtil {
             }
         }
         for (Size option : sizes) {
-            if (reqTmpWidth < reqTmpHeight) {
+            if (reqTmpWidth > reqTmpHeight) {
                 if (option.getWidth() > reqTmpWidth && option.getHeight() > reqTmpHeight) {
                     collectorSizes.add(option);
                 }
@@ -69,17 +69,6 @@ public class CameraUtil {
                 }
             }
         }
-//        for (Size option : sizes) {
-//            if (width > height) {
-//                if (option.getWidth() > width && option.getHeight() > height) {
-//                    collectorSizes.add(option);
-//                }
-//            } else {
-//                if (option.getHeight() > width && option.getWidth() > height) {
-//                    collectorSizes.add(option);
-//                }
-//            }
-//        }
         if (collectorSizes.size() > 0) {
             return Collections.min(collectorSizes, new Comparator<Size>() {
                 @Override

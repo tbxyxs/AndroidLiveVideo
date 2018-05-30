@@ -44,7 +44,7 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
         mSurface.setOnFrameAvailableListener(this);
         cameraRender = new CameraRenderer(mGLSurfaceView.getResources(), mSurface, cameraId);
         cameraHelper = new CameraHelper(mGLSurfaceView, cameraId, mSurface);
-        Size preSize = cameraHelper.getCamera().getPreviewDataSize();
+        Size preSize = cameraHelper.getCamera().getCameraPreviewDataSize();
         cameraRender.onSurfaceCreated(gl, config);
         cameraRender.setCameraDataSize(preSize.getHeight(), preSize.getWidth());
     }

@@ -23,6 +23,7 @@ import android.view.Surface;
 import com.android.tolin.app.live.utils.CameraUtil;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -33,11 +34,11 @@ import java.util.concurrent.TimeUnit;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class Camera2<T extends CameraManager> implements ICamera {
-    private final Context context;
-    private final AbsGLSurfaceView glSurfaceView;
+    private Context context;
+    private WeakReference<AbsGLSurfaceView> glSurfaceView;
     private Size mPreviewSize;
     private boolean cameraPermission = false;//true:有权限  false：没有camera相应的权限。
-    private SurfaceTexture surfaceTexture;
+    private WeakReference<SurfaceTexture> surfaceTexture;
     private HandlerThread mThreadHandler;
     private Handler mHandler;
     private CameraManager cameraManager;
@@ -55,15 +56,15 @@ public class Camera2<T extends CameraManager> implements ICamera {
     public Camera2(AbsGLSurfaceView glSurfaceView, SurfaceTexture surfaceTexture, String cameraId) {
         this.currCameraId = cameraId;
         this.context = glSurfaceView.getContext().getApplicationContext();
-        this.surfaceTexture = surfaceTexture;
-        this.glSurfaceView = glSurfaceView;
+        this.surfaceTexture = new WeakReference<>(surfaceTexture);
+        this.glSurfaceView = new WeakReference<>(glSurfaceView);
         initCameraOption();
     }
 
     private void initCameraOption() {
         //获得CameraManager
         cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        computerPreviewSize(glSurfaceView);
+        computerPreviewSize(glSurfaceView.get());
     }
 
 
@@ -104,10 +105,6 @@ public class Camera2<T extends CameraManager> implements ICamera {
         return this.cameraPermission;
     }
 
-    @Override
-    public void setPreviewTexture(SurfaceTexture surfaceTexture) {
-        this.surfaceTexture = surfaceTexture;
-    }
 
     @SuppressLint("MissingPermission")
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -140,6 +137,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
     public void destory() {
         // 获得相机开打关闭许可
         try {
+            context = null;
             mCameraOpenCloseLock.acquire();
             // 关闭捕获会话
             if (null != mSession) {
@@ -171,7 +169,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
     }
 
     @Override
-    public boolean switchTo(int cameraId) {
+    public boolean switchTo(String cameraId) {
         return false;
     }
 
@@ -201,14 +199,14 @@ public class Camera2<T extends CameraManager> implements ICamera {
     }
 
     @Override
-    public Size getPreviewDataSize() {
-        return computerPreviewSize(glSurfaceView);
+    public Size getCameraPreviewDataSize() {
+        return computerPreviewSize(glSurfaceView.get());
     }
 
 
     @Override
     public Size computerPreviewSize(AbsGLSurfaceView surfaceView) {
-        Size surfaceSize = new Size(glSurfaceView.getWidth(), glSurfaceView.getHeight());
+        Size surfaceSize = new Size(glSurfaceView.get().getWidth(), glSurfaceView.get().getHeight());
         int preWidth = surfaceSize.width;
         int preHeight = surfaceSize.height;
         Size size = new Size(preWidth, preHeight);
@@ -220,7 +218,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
             List<Size> sizes = CameraUtil.convertSize(cSizes);
 //            mPreviewSize = CameraUtil.chooseRatioPreviewSize(context, preWidth, preHeight, sizes);
             mPreviewSize = CameraUtil.chooseClosePreviewSize(context, sizes, preWidth, preHeight);
-            Log.i("Camera2", "OptimalSize width: " + mPreviewSize.getWidth() + " height: " + mPreviewSize.getHeight());
+            //   Log.i("Camera2", "OptimalSize width: " + mPreviewSize.getWidth() + " height: " + mPreviewSize.getHeight());
             return new Size(mPreviewSize);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -239,8 +237,8 @@ public class Camera2<T extends CameraManager> implements ICamera {
          */
         private void starPreview(CameraDevice cameraDevice) {
             try {
-                surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                Surface surface = new Surface(surfaceTexture);
+                surfaceTexture.get().setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                Surface surface = new Surface(surfaceTexture.get());
                 //设置了一个具有输出Surface的CaptureRequest.Builder。
                 mPreviewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
                 mPreviewRequestBuilder.addTarget(surface);
@@ -279,13 +277,13 @@ public class Camera2<T extends CameraManager> implements ICamera {
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onConfigured(CameraCaptureSession session) {
-            Log.v("StateCallback", "onConfigured");
+            // Log.v("StateCallback", "onConfigured");
             updatePreview(session);
         }
 
         @Override
         public void onConfigureFailed(CameraCaptureSession session) {
-            Log.v("StateCallback", "onConfigureFailed");
+            //  Log.v("StateCallback", "onConfigureFailed");
             session.close();
         }
 
