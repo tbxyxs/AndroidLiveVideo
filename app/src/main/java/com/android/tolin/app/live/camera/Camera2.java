@@ -1,9 +1,10 @@
 package com.android.tolin.app.live.camera;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.res.Configuration;
+import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -17,9 +18,11 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.util.Log;
+import android.support.v4.app.ActivityCompat;
 import android.view.Surface;
+import android.widget.Toast;
 
+import com.android.tolin.app.live.R;
 import com.android.tolin.app.live.utils.CameraUtil;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
@@ -37,7 +40,6 @@ public class Camera2<T extends CameraManager> implements ICamera {
     private Context context;
     private WeakReference<AbsGLSurfaceView> glSurfaceView;
     private Size mPreviewSize;
-    private boolean cameraPermission = false;//true:有权限  false：没有camera相应的权限。
     private WeakReference<SurfaceTexture> surfaceTexture;
     private HandlerThread mThreadHandler;
     private Handler mHandler;
@@ -93,16 +95,10 @@ public class Camera2<T extends CameraManager> implements ICamera {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } catch (SecurityException e) {
+         //   e.printStackTrace();
+            toastNoAccess();
         }
-    }
-
-    /**
-     * 检查是否有camera权限。
-     *
-     * @return true：有camera权限。
-     */
-    public boolean checkCameraPermission() {
-        return this.cameraPermission;
     }
 
 
@@ -110,11 +106,24 @@ public class Camera2<T extends CameraManager> implements ICamera {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void startPreview() {
-        //打开相机
-//        if (!checkCameraPermission()) {
-//            return;
-//        }
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+//            throw new RuntimeException("Camera 没有使用权限！");
+            toastNoAccess();
+            return;
+        }
         openCamera(currCameraId);
+    }
+
+    /**
+     * toast 没有权限提示
+     */
+    private void toastNoAccess() {
+        glSurfaceView.get().post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, R.string.live_string_toast_camera_no_access, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -138,7 +147,9 @@ public class Camera2<T extends CameraManager> implements ICamera {
         // 获得相机开打关闭许可
         try {
             context = null;
-            mCameraOpenCloseLock.acquire();
+            if (mCameraOpenCloseLock != null) {
+                mCameraOpenCloseLock.acquire();
+            }
             // 关闭捕获会话
             if (null != mSession) {
                 mSession.close();
@@ -153,16 +164,19 @@ public class Camera2<T extends CameraManager> implements ICamera {
             e.printStackTrace();
         } finally {
             try {
-                mCameraOpenCloseLock.release();
+                if (mCameraOpenCloseLock != null) {
+                    mCameraOpenCloseLock.release();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         try {
-            mThreadHandler.quitSafely();
-            mThreadHandler.join();
-            mThreadHandler = null;
-            mThreadHandler = null;
+            if (mThreadHandler != null) {
+                mThreadHandler.quitSafely();
+                mThreadHandler.join();
+                mThreadHandler = null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -9,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import com.android.tolin.app.live.view.CameraGLSurfaceView;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
 
 public class CameraFragment extends Fragment implements ICameraFragment {
+    private static final String TAG = CameraFragment.class.getSimpleName();
     private static final int TAKE_PHOTO_REQUEST_CODE = 900;
     private GLSurfaceView glvCamera;
     private LivePresenter livePresenter;
@@ -93,17 +95,18 @@ public class CameraFragment extends Fragment implements ICameraFragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (TAKE_PHOTO_REQUEST_CODE == requestCode) {
+            Log.v(TAG, "onRequestPermissionsResult-->permissions.length=" + permissions.length);
             glvCamera.post(run);
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    @Override
-    public void checkCameraPermission() {
+    private void checkCameraPermission() {
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(),
                     new String[]{Manifest.permission.CAMERA},
                     TAKE_PHOTO_REQUEST_CODE);
+            Log.v(TAG, "checkCameraPermission");
         }
     }
 

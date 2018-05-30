@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">LiveVideo</string>
+    <string name="live_string_toast_camera_no_access">camera没有使用权限</string>
 </resources>
