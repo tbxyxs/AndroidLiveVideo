@@ -240,12 +240,6 @@ public class Camera2<T extends CameraManager> implements ICamera {
         private void starPreview(CameraDevice cameraDevice) {
             try {
                 surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                int orientation = context.getResources().getConfiguration().orientation;
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    glSurfaceView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                } else {
-                    glSurfaceView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
-                }
                 Surface surface = new Surface(surfaceTexture);
                 //设置了一个具有输出Surface的CaptureRequest.Builder。
                 mPreviewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
