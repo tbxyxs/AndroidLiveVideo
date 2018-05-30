@@ -2,7 +2,6 @@ package com.android.tolin.app.live.fragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -15,21 +14,21 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.android.tolin.app.live.R;
+import com.android.tolin.app.live.camera.Runnable;
 import com.android.tolin.app.live.presenter.LivePresenter;
-import com.android.tolin.app.live.view.CameraGLSurfaceView;
+import com.android.tolin.app.live.view.Constant;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
 
-public class CameraFragment extends Fragment implements ICameraFragment {
-    private static final String TAG = CameraFragment.class.getSimpleName();
-    private static final int TAKE_PHOTO_REQUEST_CODE = 900;
-    private GLSurfaceView glvCamera;
+public class LiveFragment extends Fragment implements ICameraFragment {
+    private static final String TAG = LiveFragment.class.getSimpleName();
+    private LiveGLSurfaceView glvCamera;
     private LivePresenter livePresenter;
     private Runnable run;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.live_fragment_camera_pre, container, false);
+        return inflater.inflate(R.layout.live_fragment_live_preview, container, false);
     }
 
     @Override
@@ -50,7 +49,7 @@ public class CameraFragment extends Fragment implements ICameraFragment {
 
     private void initView(@NonNull View view) {
         glvCamera = view.findViewById(R.id.glvCamera);
-        livePresenter = new LivePresenter((LiveGLSurfaceView) glvCamera);
+        livePresenter =new LivePresenter(glvCamera);
         view.findViewById(R.id.acbSwitch)
                 .setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -86,15 +85,15 @@ public class CameraFragment extends Fragment implements ICameraFragment {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         if (livePresenter != null) {
             livePresenter.onDestroy();
         }
-        super.onDestroy();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (TAKE_PHOTO_REQUEST_CODE == requestCode) {
+        if (Constant.CAMERA_ACCESS_REQUEST_CODE == requestCode) {
             Log.v(TAG, "onRequestPermissionsResult-->permissions.length=" + permissions.length);
             glvCamera.post(run);
         }
@@ -105,13 +104,9 @@ public class CameraFragment extends Fragment implements ICameraFragment {
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(),
                     new String[]{Manifest.permission.CAMERA},
-                    TAKE_PHOTO_REQUEST_CODE);
+                    Constant.CAMERA_ACCESS_REQUEST_CODE);
             Log.v(TAG, "checkCameraPermission");
         }
     }
 
-    @Override
-    public CameraGLSurfaceView getGLSurfaceView() {
-        return null;
-    }
 }

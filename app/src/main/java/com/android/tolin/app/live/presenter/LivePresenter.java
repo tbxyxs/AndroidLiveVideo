@@ -1,5 +1,6 @@
 package com.android.tolin.app.live.presenter;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
