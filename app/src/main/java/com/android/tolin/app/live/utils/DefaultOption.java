@@ -2,15 +2,15 @@ package com.android.tolin.app.live.utils;
 
 import android.graphics.Point;
 
-public class DefaultOption implements ICamera.IOption {
+import com.android.tolin.app.live.camera.ICamera;
+
+public class DefaultOption {
     private float rate = 1.778f;
 
-    @Override
     public Point getPreSize() {
         return new Point(720, 720);
     }
 
-    @Override
     public Point getPicSize() {
         return new Point(720, 720);
     }

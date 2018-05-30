@@ -1,6 +1,7 @@
 package com.android.tolin.app.live.presenter;
 
 public interface ILive {
+
     /**
      * 拍照/截图
      */

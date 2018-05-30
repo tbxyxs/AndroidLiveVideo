@@ -1,31 +1,39 @@
 package com.android.tolin.app.live.utils;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
+import android.util.Log;
 
 import com.android.tolin.app.live.camera.Camera1;
-import com.android.tolin.app.live.camera.CameraRenderer;
+import com.android.tolin.app.live.camera.Camera2;
+import com.android.tolin.app.live.camera.ICHelper;
+import com.android.tolin.app.live.camera.ICamera;
+import com.android.tolin.app.live.camera.Size;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
+import com.android.tolin.app.live.view.LiveGLSurfaceView;
 import com.android.tolin.app.live.view.PSurfaceTexture;
 
 public class CameraHelper<T extends ICamera> implements ICHelper<T> {
+    private AbsGLSurfaceView glSurfaceView;
     private PSurfaceTexture surfaceTexture;
     private Context appContext;
     private T mCamera;
-    private int cameraId = 0;
+    private String cameraId = "0";
 
 
     /**
      * 预览的尺寸
      *
+     * @param glSurfaceView
      * @param surfaceTexture
      */
 
-    public CameraHelper(Context context, int cameraId, PSurfaceTexture surfaceTexture) {
+    public CameraHelper(AbsGLSurfaceView glSurfaceView, String cameraId, PSurfaceTexture surfaceTexture) {
+        this.glSurfaceView = glSurfaceView;
         this.cameraId = cameraId;
         this.surfaceTexture = surfaceTexture;
-        this.appContext = context.getApplicationContext();
+        this.appContext = glSurfaceView.getContext().getApplicationContext();
         initCamera();
     }
 
@@ -41,15 +49,16 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
     /**
      * 版本>=21时使用camera2新版api
      */
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void initVerGreater21Camera() {
-
+        mCamera = (T) new Camera2<>(glSurfaceView, surfaceTexture, cameraId);
     }
 
     /**
      * 版本小于21的使用旧版camera api
      */
     private void initVerLess21Camera() {
-        mCamera = (T) new Camera1(cameraId);
+        mCamera = (T) new Camera1(Integer.valueOf(cameraId));
         mCamera.setPreviewTexture(surfaceTexture);
     }
 
@@ -62,6 +71,7 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
     public void destroy() {
         mCamera.destory();
         mCamera = null;
+        glSurfaceView = null;
         surfaceTexture = null;
         appContext = null;
     }
@@ -73,7 +83,9 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
 
     @Override
     public void startPreview() {
-        mCamera.startPreview();
+        if (!mCamera.isPreview()) {
+            mCamera.startPreview();
+        }
     }
 
     @Override
@@ -85,7 +97,7 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
     public void relese() {
         mCamera.destory();
         surfaceTexture = null;
-        appContext=null;
+        appContext = null;
     }
 
     @Override
@@ -94,28 +106,20 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
     }
 
     @Override
-    public void onPause() {
-        mCamera.stopPreview();
-    }
-
-    @Override
-    public void onResume() {
-        mCamera.startPreview();
-    }
-
-    @Override
-    public int getCameraId() {
+    public String getCameraId() {
         return mCamera.getCurrCameraId();
     }
 
     @Override
     public int getCameraCount() {
-        return mCamera.cameraCount();
+        Log.v("surface", "getCameraCount ：" + (mCamera == null));
+        return (mCamera == null) ? 0 : mCamera.cameraCount();
     }
 
     @Override
     public T getCamera() {
         return mCamera;
     }
+
 
 }

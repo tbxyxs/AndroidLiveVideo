@@ -5,7 +5,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 
 import com.android.tolin.app.live.utils.DefaultOption;
-import com.android.tolin.app.live.utils.ICamera;
+import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -46,7 +46,7 @@ public class Camera1<T extends Camera> implements ICamera<T> {
             return;
         }
         if (c == null) {
-            openCamera(getCurrCameraId());
+            openCamera(Integer.valueOf(getCurrCameraId()));
         }
         if (c != null) {
             try {
@@ -66,7 +66,18 @@ public class Camera1<T extends Camera> implements ICamera<T> {
     }
 
     @Override
-    public void relese() {
+    public void pause() {
+        if (null == c) return;
+        c.stopPreview();
+    }
+
+    @Override
+    public void resume() {
+        if (null == c) return;
+        c.startPreview();
+    }
+
+    private void relese() {
         synchronized (Camera1.this) {
             if (c != null) {
                 try {
@@ -107,8 +118,8 @@ public class Camera1<T extends Camera> implements ICamera<T> {
     }
 
     @Override
-    public int getCurrCameraId() {
-        return currCameraId;
+    public String getCurrCameraId() {
+        return currCameraId + "";
     }
 
     @Override
@@ -122,13 +133,20 @@ public class Camera1<T extends Camera> implements ICamera<T> {
         return isPreview;
     }
 
+
     @Override
-    public IOption getCameraConfig() {
-        return camera1Option;
+    public Size getPreviewSize() {
+        Point prePoint = camera1Option.getPreSize();
+        return new Size(prePoint.x, prePoint.y);
+    }
+
+    @Override
+    public Size computerPreviewSize(AbsGLSurfaceView surfaceView) {
+        return null;
     }
 
 
-    private static class Camera1Option implements IOption {
+    private static class Camera1Option {
         private final Camera mCamera;
         private final DefaultOption dfOption;
         /**
@@ -219,12 +237,10 @@ public class Camera1<T extends Camera> implements ICamera<T> {
             }
         };
 
-        @Override
         public Point getPreSize() {
             return mPreSize;
         }
 
-        @Override
         public Point getPicSize() {
             return mPicSize;
         }

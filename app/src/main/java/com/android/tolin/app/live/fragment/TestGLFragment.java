@@ -1,11 +1,8 @@
 package com.android.tolin.app.live.fragment;
 
 import android.annotation.SuppressLint;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.android.tolin.app.live.R;
 import com.android.tolin.app.live.utils.FileUtil;
 import com.android.tolin.app.live.utils.GLShaderHelper;
 
@@ -94,8 +90,8 @@ public class TestGLFragment extends Fragment {
                 GLES30.glClearColor(1, 0, 0, 0);
 
                 //获取shader源码
-                String vertextShader = FileUtil.readAssetsToString(getContext(), "test_texture_vertex_shader.glsl");
-                String fragmentShader = FileUtil.readAssetsToString(getContext(), "test_vertex_fragment_shader.glsl");
+                String vertextShader = FileUtil.readAssetsToString(getContext(), "test/test_texture_vertex_shader.glsl");
+                String fragmentShader = FileUtil.readAssetsToString(getContext(), "test/test_vertex_fragment_shader.glsl");
                 //创建着色器及关联着色器
                 int vertexShaderId = GLShaderHelper.createShader(GLES30.GL_VERTEX_SHADER, vertextShader);
                 int fragmentShaderId = GLShaderHelper.createShader(GLES30.GL_FRAGMENT_SHADER, fragmentShader);

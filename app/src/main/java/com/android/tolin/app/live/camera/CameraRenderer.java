@@ -9,15 +9,13 @@ package com.android.tolin.app.live.camera;
 
 import android.content.res.Resources;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES30;
-import android.opengl.GLSurfaceView;
 
 import com.android.tolin.app.live.filter.AbsFilter;
 import com.android.tolin.app.live.filter.OesFilter;
 import com.android.tolin.app.live.utils.Gl2Utils;
-import com.android.tolin.app.live.view.AbsGLSurfaceView;
 import com.android.tolin.app.live.view.PSurfaceTexture;
+
+import java.lang.ref.WeakReference;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -30,16 +28,16 @@ public class CameraRenderer extends AbsGLRenderer {
 
     private int textureId;
     private float[] matrix = new float[16];
-    private SurfaceTexture surfaceTexture;
+    private WeakReference<? extends SurfaceTexture> surfaceTexture;
     private int width, height;
     private int dataWidth, dataHeight;
     private AbsFilter mOesFilter;
-    private int cameraId = 0;
+    private String cameraId = "0";
 
-    public CameraRenderer(Resources res, PSurfaceTexture surfaceTexture, int cameraId) {
-        mOesFilter = new OesFilter(res);
-        this.surfaceTexture = surfaceTexture;
-        textureId = surfaceTexture.getTextureId();
+    public CameraRenderer(Resources res, PSurfaceTexture surfaceTexture, String cameraId) {
+        this.mOesFilter = new OesFilter(res);
+        this.surfaceTexture = new WeakReference<>(surfaceTexture);
+        this.textureId = surfaceTexture.getTextureId();
         this.cameraId = cameraId;
     }
 
@@ -57,7 +55,7 @@ public class CameraRenderer extends AbsGLRenderer {
 
     private void calculateMatrix() {
         Gl2Utils.getShowMatrix(matrix, this.dataWidth, this.dataHeight, this.width, this.height);
-        if (cameraId == 1) {
+        if ("1".equals(cameraId)) {
             Gl2Utils.flip(matrix, true, false);
             Gl2Utils.rotate(matrix, 90);
         } else {
@@ -67,10 +65,10 @@ public class CameraRenderer extends AbsGLRenderer {
     }
 
     public SurfaceTexture getSurfaceTexture() {
-        return surfaceTexture;
+        return surfaceTexture.get();
     }
 
-    public void setCameraId(int id) {
+    public void setCameraId(String id) {
         this.cameraId = id;
         calculateMatrix();
     }
@@ -89,8 +87,8 @@ public class CameraRenderer extends AbsGLRenderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         super.onDrawFrame(gl);
-        if (surfaceTexture != null) {
-            surfaceTexture.updateTexImage();
+        if (surfaceTexture.get() != null) {
+            surfaceTexture.get().updateTexImage();
         }
         mOesFilter.draw();
 
@@ -98,7 +96,6 @@ public class CameraRenderer extends AbsGLRenderer {
 
     public void destroy() {
         mOesFilter.destroy();
-        surfaceTexture = null;
     }
 
 }

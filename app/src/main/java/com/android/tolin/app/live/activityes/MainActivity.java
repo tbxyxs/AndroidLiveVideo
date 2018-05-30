@@ -1,5 +1,8 @@
 package com.android.tolin.app.live.activityes;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -18,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .add(R.id.flMain, new CameraFragment(), "camera_fragment")
                 .commit();
-
 
 //        getSupportFragmentManager()
 //                .beginTransaction()

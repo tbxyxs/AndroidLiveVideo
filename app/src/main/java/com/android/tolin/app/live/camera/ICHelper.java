@@ -1,4 +1,6 @@
-package com.android.tolin.app.live.utils;
+package com.android.tolin.app.live.camera;
+
+import com.android.tolin.app.live.camera.ICamera;
 
 public interface ICHelper<T extends ICamera> {
 
@@ -34,16 +36,13 @@ public interface ICHelper<T extends ICamera> {
      */
     void toggle();
 
-    void onPause();
-
-    void onResume();
 
     /**
      * 0:后摄像头  1:前摄像头
      *
      * @return
      */
-    int getCameraId();
+    String getCameraId();
 
     /**
      * 获取摄像头个数。
@@ -53,5 +52,6 @@ public interface ICHelper<T extends ICamera> {
     int getCameraCount();
 
     T getCamera();
+
 
 }
