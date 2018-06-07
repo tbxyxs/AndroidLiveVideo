@@ -4,6 +4,9 @@ import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.android.tolin.app.live.filter.AbsFilter;
+import com.android.tolin.app.live.filter.GroupFilter;
+
 import javax.microedition.khronos.opengles.GL10;
 
 public abstract class AbsGLRenderer implements GLSurfaceView.Renderer {
@@ -14,6 +17,7 @@ public abstract class AbsGLRenderer implements GLSurfaceView.Renderer {
     private static final String TAG = AbsGLRenderer.class.getSimpleName();
     private long frameStartTimes;
     private int frameRatio = 30;//每秒30帧。
+
 
     /**
      * 设置帧率
@@ -59,4 +63,11 @@ public abstract class AbsGLRenderer implements GLSurfaceView.Renderer {
         }
         frameCount++;
     }
+
+    /**
+     * 增加滤镜
+     *
+     * @param filter 滤镜
+     */
+    public abstract void addFilter(AbsFilter filter);
 }

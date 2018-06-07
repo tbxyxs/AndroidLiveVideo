@@ -3,35 +3,36 @@ package com.android.tolin.app.live.presenter;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
 
-import com.android.tolin.app.live.filter.AbsFilter;
 import com.android.tolin.app.live.camera.Size;
+import com.android.tolin.app.live.filter.AbsFilter;
 import com.android.tolin.app.live.utils.CameraHelper;
 import com.android.tolin.app.live.utils.Gl2Utils;
-import com.android.tolin.app.live.view.LiveGLSurfaceView;
-import com.android.tolin.app.live.view.LiveRenderer;
+import com.android.tolin.app.live.view.CameraGLSurfaceView;
+import com.android.tolin.app.live.view.CameraRenderer;
 import com.android.tolin.app.live.view.PSurfaceTexture;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+public class CameraPresenter extends AbsPresenter implements ILive, GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
-    private LiveGLSurfaceView mGLSurfaceView;
+    private CameraGLSurfaceView mGLSurfaceView;
     private CameraHelper cameraHelper;
-    private LiveRenderer liveRender;
+    private CameraRenderer cameraRender;
     private int mTextureID;
     private PSurfaceTexture mSurface;
     private String cameraId = "1";
     private boolean using = false;
     private GLSurfaceView.Renderer callBackRendener;
 
-    public LivePresenter(LiveGLSurfaceView glSurfaceView) {
+    public CameraPresenter(CameraGLSurfaceView glSurfaceView) {
         this.mGLSurfaceView = glSurfaceView;
         initGL();
 
     }
 
     private void initGL() {
+        boolean isHard = mGLSurfaceView.isHardwareAccelerated();
         mGLSurfaceView.setEGLContextClientVersion(3);
         mGLSurfaceView.setRenderer(this);
         mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -43,11 +44,11 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
         mTextureID = Gl2Utils.createTextureID();
         mSurface = new PSurfaceTexture(mTextureID);
         mSurface.setOnFrameAvailableListener(this);
-        liveRender = new LiveRenderer(mGLSurfaceView.getContext(), mSurface, cameraId);
+        cameraRender = new CameraRenderer(mGLSurfaceView.getContext(), mSurface, cameraId);
         cameraHelper = new CameraHelper(mGLSurfaceView, cameraId, mSurface);
         Size preSize = cameraHelper.getCamera().getCameraPreviewDataSize();
-        liveRender.onSurfaceCreated(gl, config);
-        liveRender.setCameraDataSize(preSize.getHeight(), preSize.getWidth());
+        cameraRender.onSurfaceCreated(gl, config);
+        cameraRender.setCameraDataSize(preSize.getHeight(), preSize.getWidth());
         if (callBackRendener != null) {
             callBackRendener.onSurfaceCreated(gl, config);
         }
@@ -55,9 +56,9 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-       // Log.v("surface1", "onSurfaceChanged");
-        liveRender.setPreviewViewSize(width, height);
-        liveRender.onSurfaceChanged(gl, width, height);
+        // Log.v("surface1", "onSurfaceChanged");
+        cameraRender.setPreviewViewSize(width, height);
+        cameraRender.onSurfaceChanged(gl, width, height);
         cameraHelper.startPreview();
 
         if (callBackRendener != null) {
@@ -70,7 +71,7 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        liveRender.onDrawFrame(gl);
+        cameraRender.onDrawFrame(gl);
         if (callBackRendener != null) {
             callBackRendener.onDrawFrame(gl);
         }
@@ -92,9 +93,9 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
             cameraHelper.destroy();
             cameraHelper = null;
         }
-        if (null != liveRender) {
-            liveRender.destroy();
-            liveRender = null;
+        if (null != cameraRender) {
+            cameraRender.destroy();
+            cameraRender = null;
         }
     }
 
@@ -103,9 +104,9 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
             cameraHelper.destroy();
             cameraHelper = null;
         }
-        if (null != liveRender) {
-            liveRender.destroy();
-            liveRender = null;
+        if (null != cameraRender) {
+            cameraRender.destroy();
+            cameraRender = null;
         }
         mSurface = null;
         mGLSurfaceView = null;
@@ -133,7 +134,7 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
 
     @Override
     public void addFilter(AbsFilter filter) {
-        liveRender.addFilter(filter);
+        cameraRender.addFilter(filter);
     }
 
     @Override
@@ -146,7 +147,7 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
             }
             using = true;
             cameraHelper.destroy();
-            liveRender.destroy();
+            cameraRender.destroy();
             mGLSurfaceView.onPause();
             mGLSurfaceView.onResume();
         }

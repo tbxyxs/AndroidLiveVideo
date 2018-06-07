@@ -14,9 +14,11 @@ import com.android.tolin.app.live.view.AbsGLSurfaceView;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
 import com.android.tolin.app.live.view.PSurfaceTexture;
 
+import java.lang.ref.WeakReference;
+
 public class CameraHelper<T extends ICamera> implements ICHelper<T> {
-    private AbsGLSurfaceView glSurfaceView;
-    private PSurfaceTexture surfaceTexture;
+    private WeakReference<AbsGLSurfaceView> glSurfaceView;
+    private WeakReference<PSurfaceTexture> surfaceTexture;
     private Context appContext;
     private T mCamera;
     private String cameraId = "0";
@@ -30,9 +32,9 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
      */
 
     public CameraHelper(AbsGLSurfaceView glSurfaceView, String cameraId, PSurfaceTexture surfaceTexture) {
-        this.glSurfaceView = glSurfaceView;
+        this.glSurfaceView =new WeakReference<>(glSurfaceView);
         this.cameraId = cameraId;
-        this.surfaceTexture = surfaceTexture;
+        this.surfaceTexture =new WeakReference<>(surfaceTexture);
         this.appContext = glSurfaceView.getContext().getApplicationContext();
         initCamera();
     }
@@ -51,14 +53,14 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
      */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void initVerGreater21Camera() {
-        mCamera = (T) new Camera2<>(glSurfaceView, surfaceTexture, cameraId);
+        mCamera = (T) new Camera2<>(glSurfaceView.get(), surfaceTexture.get(), cameraId);
     }
 
     /**
      * 版本小于21的使用旧版camera api
      */
     private void initVerLess21Camera() {
-        mCamera = (T) new Camera1(glSurfaceView, surfaceTexture, cameraId);
+        mCamera = (T) new Camera1(glSurfaceView.get(), surfaceTexture.get(), cameraId);
     }
 
     @Override
@@ -68,8 +70,10 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
 
     @Override
     public void destroy() {
-        mCamera.destory();
-        mCamera = null;
+        if (mCamera != null) {
+            mCamera.destory();
+            mCamera = null;
+        }
         glSurfaceView = null;
         surfaceTexture = null;
         appContext = null;

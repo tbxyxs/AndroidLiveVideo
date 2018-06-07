@@ -5,7 +5,10 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 
-public abstract class AbsGLSurfaceView extends GLSurfaceView {
+import com.android.tolin.app.live.presenter.AbsPresenter;
+import com.android.tolin.app.live.presenter.ILive;
+
+public abstract class AbsGLSurfaceView<T extends AbsPresenter> extends GLSurfaceView {
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
 
@@ -17,4 +20,5 @@ public abstract class AbsGLSurfaceView extends GLSurfaceView {
         super(context, attrs);
     }
 
+    public abstract T getPresenter();
 }

@@ -14,20 +14,20 @@ import android.opengl.GLES30;
 import java.util.Arrays;
 
 /**
- * Description:
+ * camera预览filter，没有添加任何预览效果
  */
-public class OesFilter extends AbsFilter {
+public class CameraPrviewFilter extends AbsFilter {
 
     private int mHCoordMatrix;
     private float[] mCoordMatrix= Arrays.copyOf(OM,16);
 
-    public OesFilter(Resources mRes) {
+    public CameraPrviewFilter(Resources mRes) {
         super(mRes);
     }
 
     @Override
     protected void onCreate() {
-        createProgramByAssetsFile("shader/oes_base_vertex.glsl","shader/oes_base_fragment.glsl");
+        createProgramByAssetsFile("shader/camera/oes_base_vertex.glsl", "shader/camera/oes_base_fragment.glsl");
         mHCoordMatrix= GLES30.glGetUniformLocation(mProgram,"vCoordMatrix");
     }
 

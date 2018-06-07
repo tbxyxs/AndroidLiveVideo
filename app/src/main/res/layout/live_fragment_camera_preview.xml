@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.android.tolin.app.live.view.LiveGLSurfaceView
+    <com.android.tolin.app.live.view.CameraGLSurfaceView
         android:id="@+id/glvCamera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -20,12 +20,4 @@
         android:text="切换"
         app:layout_constraintTop_toTopOf="@+id/glvCamera"/>
 
-    <android.support.v7.widget.AppCompatSeekBar
-        android:id="@+id/mSeek"
-        android:layout_width="match_parent"
-        android:layout_height="31dp"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/acbSwitch"
-        tools:ignore="MissingConstraints"/>
 </android.support.constraint.ConstraintLayout>

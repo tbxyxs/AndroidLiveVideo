@@ -19,23 +19,24 @@ import android.widget.SeekBar;
 import com.android.tolin.app.live.R;
 import com.android.tolin.app.live.camera.Runnable;
 import com.android.tolin.app.live.filter.Beauty;
+import com.android.tolin.app.live.presenter.CameraPresenter;
 import com.android.tolin.app.live.presenter.LivePresenter;
+import com.android.tolin.app.live.view.CameraGLSurfaceView;
 import com.android.tolin.app.live.view.Constant;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class LiveFragment extends Fragment implements ICameraFragment {
-    private static final String TAG = LiveFragment.class.getSimpleName();
-    private LiveGLSurfaceView glvCamera;
+public class CameraFragment extends Fragment implements ICameraFragment {
+    private static final String TAG = CameraFragment.class.getSimpleName();
+    private CameraGLSurfaceView glvCamera;
     private Runnable run;
-    private Beauty mBeautyFilter;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.live_fragment_live_preview, container, false);
+        return inflater.inflate(R.layout.live_fragment_camera_preview, container, false);
     }
 
     @Override
@@ -55,55 +56,20 @@ public class LiveFragment extends Fragment implements ICameraFragment {
     }
 
     private void initView(@NonNull View view) {
-        mBeautyFilter = new Beauty(getResources());
         glvCamera = view.findViewById(R.id.glvCamera);
-//        livePresenter.setCallBackRendener(new GLSurfaceView.Renderer() {
-//            @Override
-//            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-//            }
-//
-//            @Override
-//            public void onSurfaceChanged(GL10 gl, int width, int height) {
-//
-//            }
-//
-//            @Override
-//            public void onDrawFrame(GL10 gl) {
-//
-//            }
-//        });
 
         view.findViewById(R.id.acbSwitch)
                 .setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        LivePresenter livePresenter = glvCamera.getPresenter();
-                        boolean flag = livePresenter.isUsing();
+                        CameraPresenter cameraPresenter = glvCamera.getPresenter();
+                        boolean flag = cameraPresenter.isUsing();
                         if (flag) {
                             return;
                         }
-                        livePresenter.switchCamera();
+                        cameraPresenter.switchCamera();
                     }
                 });
-        AppCompatSeekBar mSeek = view.findViewById(R.id.mSeek);
-        mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.e("wuwang", "process:" + progress);
-//                mLookupFilter.setIntensity(progress/100f);
-                mBeautyFilter.setFlag(progress / 20 + 1);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
     }
 
 
@@ -122,6 +88,7 @@ public class LiveFragment extends Fragment implements ICameraFragment {
             glvCamera.onPause();
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
