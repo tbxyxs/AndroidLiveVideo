@@ -2,31 +2,21 @@ package com.android.tolin.app.live.fragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.AppCompatSeekBar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.SeekBar;
 
 import com.android.tolin.app.live.R;
 import com.android.tolin.app.live.camera.Runnable;
-import com.android.tolin.app.live.filter.Beauty;
 import com.android.tolin.app.live.presenter.CameraPresenter;
-import com.android.tolin.app.live.presenter.LivePresenter;
 import com.android.tolin.app.live.view.CameraGLSurfaceView;
 import com.android.tolin.app.live.view.Constant;
-import com.android.tolin.app.live.view.LiveGLSurfaceView;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
 
 public class CameraFragment extends Fragment implements ICameraFragment {
     private static final String TAG = CameraFragment.class.getSimpleName();

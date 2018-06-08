@@ -15,7 +15,10 @@ import android.opengl.GLES30;
 
 import com.android.tolin.app.live.camera.AbsGLRenderer;
 import com.android.tolin.app.live.filter.AbsFilter;
+import com.android.tolin.app.live.filter.BeautyFilter;
+import com.android.tolin.app.live.filter.CameraPrviewFilter;
 import com.android.tolin.app.live.filter.GroupFilter;
+import com.android.tolin.app.live.filter.LivePrviewFilter;
 import com.android.tolin.app.live.filter.NoFilter;
 import com.android.tolin.app.live.filter.TextureFilter;
 import com.android.tolin.app.live.utils.Gl2Utils;
@@ -30,9 +33,11 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class LiveRenderer extends AbsGLRenderer {
 
+    private final GroupFilter groupFilter;
+    private final BeautyFilter beautyFilter;
+    private NoFilter noFilter;
+    //    private LivePrviewFilter liveFilter;
     private Context context;
-    private TextureFilter mEffectFilter;
-    private NoFilter mShowFilter;
     private int textureId;
     private float[] matrix = new float[16];
     private WeakReference<? extends SurfaceTexture> surfaceTexture;
@@ -40,10 +45,6 @@ public class LiveRenderer extends AbsGLRenderer {
     private int dataWidth, dataHeight;
     //    private AbsFilter mOesFilter;
     private String cameraId = "0";
-    private GroupFilter mGroupFilter;                           //中间特效
-    //创建离屏buffer，用于最后导出数据
-    private int[] mExportFrame = new int[1];
-    private int[] mExportTexture = new int[1];
 
     public LiveRenderer(Context context, PSurfaceTexture surfaceTexture, String cameraId) {
         this.context = context;
@@ -51,10 +52,10 @@ public class LiveRenderer extends AbsGLRenderer {
         this.textureId = surfaceTexture.getTextureId();
         this.cameraId = cameraId;
         Resources resources = context.getResources();
-//        this.mOesFilter = new CameraPrviewFilter(resources);
-        this.mEffectFilter = new TextureFilter(resources);
-        this.mShowFilter = new NoFilter(resources);
-        this.mGroupFilter = new GroupFilter(resources);
+//        this.liveFilter = new LivePrviewFilter(resources);
+        noFilter = new NoFilter(resources);
+        beautyFilter = new BeautyFilter(resources);
+        groupFilter = new GroupFilter(resources, 1);
     }
 
     /**
@@ -89,13 +90,8 @@ public class LiveRenderer extends AbsGLRenderer {
         } else {
             Gl2Utils.rotate(matrix, 270);
         }
-//        mOesFilter.setMatrix(matrix);
-        mShowFilter.setSize(width, height);
-        mShowFilter.setMatrix(matrix);
-        mGroupFilter.setSize(dataWidth, dataHeight);
-        mEffectFilter.setSize(dataWidth, dataHeight);
-        mShowFilter.setSize(dataWidth, dataHeight);
-        mGroupFilter.setSize(dataWidth, dataHeight);
+        noFilter.setMatrix(matrix);
+        groupFilter.setMatrix(matrix);
     }
 
     public SurfaceTexture getSurfaceTexture() {
@@ -109,21 +105,12 @@ public class LiveRenderer extends AbsGLRenderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        mEffectFilter.create();
-        mShowFilter.create();
-        mGroupFilter.create();
-//        mOesFilter.setTextureId(textureId);
-        mEffectFilter.setTextureId(textureId);
-        mShowFilter.setTextureId(textureId);
-        mGroupFilter.setTextureId(textureId);
-        deleteFrameBuffer();
-        GLES30.glGenFramebuffers(1, mExportFrame, 0);
+        noFilter.create();
+        noFilter.setTextureId(textureId);
+        groupFilter.setTextureId(textureId);
+        groupFilter.addFilter(beautyFilter);
     }
 
-    private void deleteFrameBuffer() {
-        GLES20.glDeleteFramebuffers(1, mExportFrame, 0);
-        GLES20.glDeleteTextures(1, mExportTexture, 0);
-    }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
@@ -133,32 +120,24 @@ public class LiveRenderer extends AbsGLRenderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         super.onDrawFrame(gl);
-        if (surfaceTexture.get() != null) {
-            surfaceTexture.get().updateTexImage();
+        if (getSurfaceTexture() != null) {
+            getSurfaceTexture().updateTexImage();
+//            //获取外部纹理的矩阵，用来确定纹理的采样位置，没有此矩阵可能导致图像翻转等问题
+//            getSurfaceTexture().getTransformMatrix(matrix);
+
         }
-//        mOesFilter.draw();
-        mEffectFilter.draw();
-        mGroupFilter.setTextureId(mEffectFilter.getOutputTexture());
-        mGroupFilter.draw();
-
-        //显示传入的texture上，一般是显示在屏幕上
-        GLES30.glViewport(0, 0, width, height);
-        mShowFilter.setMatrix(matrix);
-        mShowFilter.setTextureId(mGroupFilter.getOutputTexture());
-        mShowFilter.draw();
-
+        noFilter.draw();
+        groupFilter.onDraw();
     }
 
     @Override
     public void addFilter(AbsFilter filter) {
-        mGroupFilter.addFilter(filter);
+        groupFilter.addFilter(filter);
     }
 
     public void destroy() {
-//        mOesFilter.destroy();
-        mEffectFilter.destroy();
-        mShowFilter.destroy();
-        mGroupFilter.destroy();
+        noFilter.destroy();
+        groupFilter.destroy();
     }
 
 

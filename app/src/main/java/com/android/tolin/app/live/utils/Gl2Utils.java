@@ -9,7 +9,7 @@ package com.android.tolin.app.live.utils;
 
 import android.content.res.Resources;
 import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLES30;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -47,15 +47,15 @@ public class Gl2Utils {
      */
     public static int createTextureID() {
         int[] texture = new int[1];
-        GLES20.glGenTextures(1, texture, 0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture[0]);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES30.glGenTextures(1, texture, 0);
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture[0]);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES30.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         return texture[0];
     }
@@ -185,20 +185,20 @@ public class Gl2Utils {
 
     //创建GL程序
     public static int createGlProgram(String vertexSource, String fragmentSource) {
-        int vertex = loadShader(GLES20.GL_VERTEX_SHADER, vertexSource);
+        int vertex = loadShader(GLES30.GL_VERTEX_SHADER, vertexSource);
         if (vertex == 0) return 0;
-        int fragment = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
+        int fragment = loadShader(GLES30.GL_FRAGMENT_SHADER, fragmentSource);
         if (fragment == 0) return 0;
-        int program = GLES20.glCreateProgram();
+        int program = GLES30.glCreateProgram();
         if (program != 0) {
-            GLES20.glAttachShader(program, vertex);
-            GLES20.glAttachShader(program, fragment);
-            GLES20.glLinkProgram(program);
+            GLES30.glAttachShader(program, vertex);
+            GLES30.glAttachShader(program, fragment);
+            GLES30.glLinkProgram(program);
             int[] linkStatus = new int[1];
-            GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
-            if (linkStatus[0] != GLES20.GL_TRUE) {
-                glError(1, "Could not link program:" + GLES20.glGetProgramInfoLog(program));
-                GLES20.glDeleteProgram(program);
+            GLES30.glGetProgramiv(program, GLES30.GL_LINK_STATUS, linkStatus, 0);
+            if (linkStatus[0] != GLES30.GL_TRUE) {
+                glError(1, "Could not link program:" + GLES30.glGetProgramInfoLog(program));
+                GLES30.glDeleteProgram(program);
                 program = 0;
             }
         }

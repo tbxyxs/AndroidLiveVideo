@@ -76,8 +76,33 @@ public class GLShaderHelper {
         GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
         GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0);
         bitmap.recycle();
-//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D,0);//0：解除纹理的绑定
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);//0：解除纹理的绑定
         return textureId[0];
+    }
+
+    /**
+     * 创建一个OES类型的材质id
+     *
+     * @return
+     */
+    public static int createOESTextureObject() {
+        int[] tex = new int[1];
+        //生成一个纹理
+        GLES30.glGenTextures(1, tex, 0);
+        //将此纹理绑定到外部纹理上
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, tex[0]);
+        //设置纹理过滤参数
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+        //解除纹理绑定
+        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        return tex[0];
     }
 
     /**

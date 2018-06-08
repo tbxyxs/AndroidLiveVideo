@@ -117,7 +117,6 @@ public class CameraRenderer extends AbsGLRenderer {
             surfaceTexture.get().updateTexImage();
         }
         mOesFilter.draw();
-
     }
 
     @Override

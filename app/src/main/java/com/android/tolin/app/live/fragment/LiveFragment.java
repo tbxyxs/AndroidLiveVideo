@@ -2,7 +2,6 @@ package com.android.tolin.app.live.fragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -18,19 +17,16 @@ import android.widget.SeekBar;
 
 import com.android.tolin.app.live.R;
 import com.android.tolin.app.live.camera.Runnable;
-import com.android.tolin.app.live.filter.Beauty;
+import com.android.tolin.app.live.filter.BeautyFilter;
 import com.android.tolin.app.live.presenter.LivePresenter;
 import com.android.tolin.app.live.view.Constant;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
 
 public class LiveFragment extends Fragment implements ICameraFragment {
     private static final String TAG = LiveFragment.class.getSimpleName();
     private LiveGLSurfaceView glvCamera;
     private Runnable run;
-    private Beauty mBeautyFilter;
+    private BeautyFilter mBeautyFilterFilter;
 
     @Nullable
     @Override
@@ -55,7 +51,7 @@ public class LiveFragment extends Fragment implements ICameraFragment {
     }
 
     private void initView(@NonNull View view) {
-        mBeautyFilter = new Beauty(getResources());
+        mBeautyFilterFilter = new BeautyFilter(getResources());
         glvCamera = view.findViewById(R.id.glvCamera);
 //        livePresenter.setCallBackRendener(new GLSurfaceView.Renderer() {
 //            @Override
@@ -91,7 +87,7 @@ public class LiveFragment extends Fragment implements ICameraFragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 Log.e("wuwang", "process:" + progress);
 //                mLookupFilter.setIntensity(progress/100f);
-                mBeautyFilter.setFlag(progress / 20 + 1);
+                mBeautyFilterFilter.setFlag(progress / 20 + 1);
             }
 
             @Override
