@@ -55,7 +55,7 @@ public class LiveRenderer extends AbsGLRenderer {
 //        this.liveFilter = new LivePrviewFilter(resources);
         noFilter = new NoFilter(resources);
         beautyFilter = new BeautyFilter(resources);
-        groupFilter = new GroupFilter(resources, 1);
+        groupFilter = new GroupFilter(resources);
     }
 
     /**
@@ -79,6 +79,7 @@ public class LiveRenderer extends AbsGLRenderer {
     public void setPreviewViewSize(int width, int height) {
         this.width = width;
         this.height = height;
+        groupFilter.setSize(width,height);
         calculateMatrix();
     }
 
@@ -107,6 +108,7 @@ public class LiveRenderer extends AbsGLRenderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         noFilter.create();
         noFilter.setTextureId(textureId);
+        groupFilter.create();
         groupFilter.setTextureId(textureId);
         groupFilter.addFilter(beautyFilter);
     }
@@ -127,7 +129,8 @@ public class LiveRenderer extends AbsGLRenderer {
 
         }
         noFilter.draw();
-        groupFilter.onDraw();
+        groupFilter.setTextureId(textureId);
+        groupFilter.draw();
     }
 
     @Override

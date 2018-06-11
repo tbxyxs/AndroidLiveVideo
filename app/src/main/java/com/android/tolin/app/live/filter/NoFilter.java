@@ -10,6 +10,8 @@ package com.android.tolin.app.live.filter;
 import android.content.res.Resources;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
+import android.opengl.GLES30;
+import android.opengl.GLES30;
 
 
 /**
@@ -33,20 +35,11 @@ public class NoFilter extends AbsFilter {
     }
 
     @Override
-    protected void onBindTexture() {
-        //生成一个纹理
-        //将此纹理绑定到外部纹理上
-        GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, getTextureId());
-        //设置纹理过滤参数
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-        GLES30.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+    protected void onClear() {
+        GLES30.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
     }
+
 
     @Override
     protected void onDraw() {
