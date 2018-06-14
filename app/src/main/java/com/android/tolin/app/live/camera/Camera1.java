@@ -3,6 +3,7 @@ package com.android.tolin.app.live.camera;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.MediaRecorder;
 
 import com.android.tolin.app.live.utils.CameraUtil;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
@@ -22,6 +23,7 @@ public class Camera1<T extends Camera> implements ICamera<T> {
     private String currCameraId = "0";
     private boolean isPreview = false;
     private Context context;
+    private int fps = 28;
 
 
     public Camera1(AbsGLSurfaceView glSurfaceView, SurfaceTexture surfaceTexture, String cameraId) {
@@ -39,7 +41,32 @@ public class Camera1<T extends Camera> implements ICamera<T> {
         computerPreviewSize(glSurfaceView.get());
         Size size = getCameraPreviewDataSize();
         parameters.setPreviewSize(size.getWidth(), size.getHeight());
+        int[] range = adaptePreviewFps(fps, parameters.getSupportedPreviewFpsRange());
+        parameters.setPreviewFpsRange(range[0], range[1]);
         c.setParameters(parameters);
+    }
+
+    /**
+     * 适配预览帧率
+     *
+     * @param expectedFps
+     * @param fpsRanges
+     * @return
+     */
+    private int[] adaptePreviewFps(int expectedFps, List<int[]> fpsRanges) {
+        expectedFps *= 1000;
+        int[] closestRange = fpsRanges.get(0);
+        int measure = Math.abs(closestRange[0] - expectedFps) + Math.abs(closestRange[1] - expectedFps);
+        for (int[] range : fpsRanges) {
+            if (range[0] <= expectedFps && range[1] >= expectedFps) {
+                int curMeasure = Math.abs(range[0] - expectedFps) + Math.abs(range[1] - expectedFps);
+                if (curMeasure < measure) {
+                    closestRange = range;
+                    measure = curMeasure;
+                }
+            }
+        }
+        return closestRange;
     }
 
     private Camera openCamera(String cameraId) {
@@ -70,18 +97,18 @@ public class Camera1<T extends Camera> implements ICamera<T> {
 
     @Override
     public void stopPreview() {
-        context=null;
+        context = null;
         relese();
     }
 
     @Override
-    public void pause() {
+    public void onPause() {
         if (null == c) return;
         c.stopPreview();
     }
 
     @Override
-    public void resume() {
+    public void onResume() {
         if (null == c) return;
         c.startPreview();
     }
@@ -162,5 +189,24 @@ public class Camera1<T extends Camera> implements ICamera<T> {
         return new Size(mPreviewSize);
     }
 
+    @Override
+    public void setCameraFps(int fps) {
+        this.fps = fps;
+        initCameraOption();
+    }
 
+    @Override
+    public Size computerVideoSize(AbsGLSurfaceView surfaceView) {
+        return null;
+    }
+
+    @Override
+    public Size getCameraVideoSize() {
+        return null;
+    }
+
+    @Override
+    public T getCamera() {
+        return (T) c;
+    }
 }

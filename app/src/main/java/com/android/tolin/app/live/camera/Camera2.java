@@ -13,6 +13,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -27,7 +28,9 @@ import com.android.tolin.app.live.utils.CameraUtil;
 import com.android.tolin.app.live.view.AbsGLSurfaceView;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -36,13 +39,13 @@ import java.util.concurrent.TimeUnit;
  * 5.0及以上使用的camera为
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class Camera2<T extends CameraManager> implements ICamera {
+public class Camera2<T extends CameraManager> implements ICamera<T> {
     private Context context;
     private WeakReference<AbsGLSurfaceView> glSurfaceView;
     private Size mPreviewSize;
     private WeakReference<SurfaceTexture> surfaceTexture;
     private HandlerThread mThreadHandler;
-    private Handler mHandler;
+    private Handler mPreviewHandler;
     private CameraManager cameraManager;
     private String currCameraId = "0";
     private CameraDevice mCameraDevice;
@@ -54,12 +57,14 @@ public class Camera2<T extends CameraManager> implements ICamera {
      */
     private Semaphore mCameraOpenCloseLock = null;
     private boolean isPreview = false;
+    private Surface videoSurface;//录制视频的outsurface
 
     public Camera2(AbsGLSurfaceView glSurfaceView, SurfaceTexture surfaceTexture, String cameraId) {
         this.currCameraId = cameraId;
         this.context = glSurfaceView.getContext().getApplicationContext();
         this.surfaceTexture = new WeakReference<>(surfaceTexture);
         this.glSurfaceView = new WeakReference<>(glSurfaceView);
+        initLooper();
         initCameraOption();
     }
 
@@ -72,32 +77,30 @@ public class Camera2<T extends CameraManager> implements ICamera {
 
     //很多过程都变成了异步的了，所以这里需要一个子线程的looper
     private void initLooper() {
+        if (mThreadHandler != null)
+            return;
         mThreadHandler = new HandlerThread("CameraPreviewThread");
         mThreadHandler.start();
-        mHandler = new Handler(mThreadHandler.getLooper());
+        mPreviewHandler = new Handler(mThreadHandler.getLooper());
     }
 
 
     @SuppressLint("MissingPermission")
     private void openCamera(String cameraId) {
-        initLooper();
         this.currCameraId = cameraId;
         mCameraOpenCloseLock = new Semaphore(1);
-        initCameraOption();
         try {
-            // 尝试获得相机开打关闭许可, 等待2500时间仍没有获得则排除异常
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            cameraManager.openCamera(currCameraId, stateCallback, mHandler);
-            isPreview = true;
+            cameraManager.openCamera(currCameraId, stateCallback, mPreviewHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        } catch (SecurityException e) {
+            //   e.printStackTrace();
+            toastNoAccess();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } catch (SecurityException e) {
-         //   e.printStackTrace();
-            toastNoAccess();
         }
     }
 
@@ -109,6 +112,10 @@ public class Camera2<T extends CameraManager> implements ICamera {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
 //            throw new RuntimeException("Camera 没有使用权限！");
             toastNoAccess();
+            return;
+        }
+        if (mCameraDevice != null) {
+            startPreview(mCameraDevice);
             return;
         }
         openCamera(currCameraId);
@@ -126,27 +133,48 @@ public class Camera2<T extends CameraManager> implements ICamera {
         });
     }
 
+
     @Override
     public void stopPreview() {
+        // 关闭捕获会话
+        if (null != mSession) {
+            mSession.close();
+            mSession = null;
+            videoSurface = null;
+            isPreview = false;
+        }
+    }
+
+    private void stopBackgroundThread() {
+        if (mThreadHandler == null) {
+            return;
+        }
+        mThreadHandler.quitSafely();
+        try {
+            mThreadHandler.join();
+            mThreadHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onPause() {
         destory();
+        stopBackgroundThread();
     }
 
     @Override
-    public void pause() {
-
-    }
-
-    @Override
-    public void resume() {
+    public void onResume() {
 
     }
 
 
     @Override
     public void destory() {
+        stopBackgroundThread();
         // 获得相机开打关闭许可
         try {
-            context = null;
             if (mCameraOpenCloseLock != null) {
                 mCameraOpenCloseLock.acquire();
             }
@@ -160,6 +188,7 @@ public class Camera2<T extends CameraManager> implements ICamera {
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
+            videoSurface = null;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -240,35 +269,83 @@ public class Camera2<T extends CameraManager> implements ICamera {
         return size;
     }
 
+    @Override
+    public void setCameraFps(int fps) {
+
+    }
+
+    @Override
+    public Size computerVideoSize(AbsGLSurfaceView surfaceView) {
+        CameraCharacteristics characteristics = null;
+        try {
+            characteristics = cameraManager.getCameraCharacteristics(currCameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            android.util.Size[] cSizes = map.getOutputSizes(SurfaceTexture.class);
+            List<Size> sizes = CameraUtil.convertSize(cSizes);
+            android.util.Size mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
+            Size surfaceSize = new Size(glSurfaceView.get().getWidth(), glSurfaceView.get().getHeight());
+            int width = surfaceSize.width;
+            int height = surfaceSize.height;
+            android.util.Size mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), width, height, mVideoSize);
+            Size size = new Size(mPreviewSize);
+            return size;
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public Size getCameraVideoSize() {
+        return computerVideoSize(glSurfaceView.get());
+    }
+
+    @Override
+    public T getCamera() {
+        return (T) cameraManager;
+    }
+
+    private void reStartPreview() {
+        if (mCameraDevice == null) return;
+        startPreview(mCameraDevice);
+    }
+
+    /**
+     * 为相机预览创建新的CameraCaptureSession
+     *
+     * @param cameraDevice
+     */
+    private void startPreview(CameraDevice cameraDevice) {
+        try {
+            surfaceTexture.get().setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            Surface surface = new Surface(surfaceTexture.get());
+            //设置了一个具有输出Surface的CaptureRequest.Builder。
+            mPreviewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            mPreviewRequestBuilder.addTarget(surface);
+            List<Surface> surfaces = new ArrayList<>();
+            surfaces.add(surface);
+            if (null != videoSurface) {
+                surfaces.add(videoSurface);
+                mPreviewRequestBuilder.addTarget(videoSurface);
+            }
+            cameraDevice.createCaptureSession(surfaces, mSessionStateCallback, mPreviewHandler);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private CaptureRequest.Builder mPreviewRequestBuilder;
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
 
-        /**
-         * 为相机预览创建新的CameraCaptureSession
-         *
-         * @param cameraDevice
-         */
-        private void starPreview(CameraDevice cameraDevice) {
-            try {
-                surfaceTexture.get().setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                Surface surface = new Surface(surfaceTexture.get());
-                //设置了一个具有输出Surface的CaptureRequest.Builder。
-                mPreviewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                mPreviewRequestBuilder.addTarget(surface);
-                cameraDevice.createCaptureSession(Arrays.asList(surface), mSessionStateCallback, mHandler);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
 
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
             //创建CameraPreviewSession
-            starPreview(cameraDevice);
+            startPreview(cameraDevice);
         }
 
 
@@ -286,6 +363,17 @@ public class Camera2<T extends CameraManager> implements ICamera {
             mCameraDevice = null;
         }
     };
+
+    /**
+     * 添加用于录制视频的video surface
+     *
+     * @param surface
+     */
+    public void addVideoSurface(Surface surface) {
+        this.videoSurface = surface;
+    }
+
+
     private CameraCaptureSession.StateCallback mSessionStateCallback = new CameraCaptureSession.StateCallback() {
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -298,16 +386,17 @@ public class Camera2<T extends CameraManager> implements ICamera {
         @Override
         public void onConfigureFailed(CameraCaptureSession session) {
             //  Log.v("StateCallback", "onConfigureFailed");
-            session.close();
+//            session.close();
         }
 
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         private void updatePreview(CameraCaptureSession session) {
-            mSession = session;
             // 相机已经关闭
             if (null == mCameraDevice) {
                 return;
             }
+            isPreview = true;
+            mSession = session;
             // 会话准备好后，我们开始显示预览
             try {
                 // 自动对焦应
@@ -317,12 +406,52 @@ public class Camera2<T extends CameraManager> implements ICamera {
                 // 开启相机预览并添加事件
                 CaptureRequest mPreviewRequest = mPreviewRequestBuilder.build();
                 //发送请求
-                session.setRepeatingRequest(mPreviewRequest, null, mHandler);
+                session.setRepeatingRequest(mPreviewRequest, null, mPreviewHandler);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     };
 
+    private static android.util.Size chooseVideoSize(android.util.Size[] choices) {
+        for (android.util.Size size : choices) {
+            if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+                return size;
+            }
+        }
+        //    Log.e(TAG, "Couldn't find any suitable video size");
+        return choices[choices.length - 1];
+    }
 
+    private static android.util.Size chooseOptimalSize(android.util.Size[] choices, int width, int height, android.util.Size aspectRatio) {
+        // Collect the supported resolutions that are at least as big as the preview Surface
+        List<android.util.Size> bigEnough = new ArrayList<>();
+        int w = aspectRatio.getWidth();
+        int h = aspectRatio.getHeight();
+        for (android.util.Size option : choices) {
+            if (option.getHeight() == option.getWidth() * h / w &&
+                    option.getWidth() >= width && option.getHeight() >= height) {
+                bigEnough.add(option);
+            }
+        }
+
+        // Pick the smallest of those, assuming we found any
+        if (bigEnough.size() > 0) {
+            return Collections.min(bigEnough, new CompareSizesByArea());
+        } else {
+            //   Log.e(TAG, "Couldn't find any suitable preview size");
+            return choices[0];
+        }
+    }
+
+    static class CompareSizesByArea implements Comparator<android.util.Size> {
+
+        @Override
+        public int compare(android.util.Size lhs, android.util.Size rhs) {
+            // We cast here to ensure the multiplications won't overflow
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
+                    (long) rhs.getWidth() * rhs.getHeight());
+        }
+
+    }
 }

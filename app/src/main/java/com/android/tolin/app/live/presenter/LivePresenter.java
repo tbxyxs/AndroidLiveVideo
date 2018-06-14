@@ -1,22 +1,30 @@
 package com.android.tolin.app.live.presenter;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLSurfaceView;
+import android.widget.Toast;
 
 import com.android.tolin.app.live.filter.AbsFilter;
 import com.android.tolin.app.live.camera.Size;
 import com.android.tolin.app.live.utils.CameraHelper;
 import com.android.tolin.app.live.utils.GLShaderHelper;
+import com.android.tolin.app.live.utils.MediaRecorderHelper;
 import com.android.tolin.app.live.view.LiveGLSurfaceView;
 import com.android.tolin.app.live.view.LiveRenderer;
 import com.android.tolin.app.live.view.PSurfaceTexture;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
-    private LiveGLSurfaceView mGLSurfaceView;
+    private final Context context;
+    private WeakReference<LiveGLSurfaceView> glSurfaceViewWeakReference;
     private CameraHelper cameraHelper;
     private LiveRenderer liveRender;
     private int oesTextureID;
@@ -24,16 +32,22 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
     private String cameraId = "1";
     private boolean using = false;
     private GLSurfaceView.Renderer callBackRendener;
+    private MediaRecorderHelper mediaRecorderHelper;
 
     public LivePresenter(LiveGLSurfaceView glSurfaceView) {
-        this.mGLSurfaceView = glSurfaceView;
+        this.glSurfaceViewWeakReference = new WeakReference<>(glSurfaceView);
+        context = glSurfaceView.getContext().getApplicationContext();
         initGL();
     }
 
+    private LiveGLSurfaceView getGLSurfaceView() {
+        return glSurfaceViewWeakReference.get();
+    }
+
     private void initGL() {
-        mGLSurfaceView.setEGLContextClientVersion(3);
-        mGLSurfaceView.setRenderer(this);
-        mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        getGLSurfaceView().setEGLContextClientVersion(3);
+        getGLSurfaceView().setRenderer(this);
+        getGLSurfaceView().setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
     }
 
@@ -46,12 +60,13 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
             @Override
             public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                 //每获取到一帧数据时请求OpenGL ES进行渲染
-                mGLSurfaceView.requestRender();
+                getGLSurfaceView().requestRender();
             }
         });
         mSurface.setOnFrameAvailableListener(this);
-        liveRender = new LiveRenderer(mGLSurfaceView.getContext(), mSurface, cameraId);
-        cameraHelper = new CameraHelper(mGLSurfaceView, cameraId, mSurface);
+        liveRender = new LiveRenderer(getGLSurfaceView().getContext(), mSurface, cameraId);
+        cameraHelper = new CameraHelper(getGLSurfaceView(), cameraId, mSurface);
+        mediaRecorderHelper = new MediaRecorderHelper(cameraHelper, getGLSurfaceView());
         Size preSize = cameraHelper.getCamera().getCameraPreviewDataSize();
         liveRender.onSurfaceCreated(gl, config);
         liveRender.setCameraDataSize(preSize.getHeight(), preSize.getWidth());
@@ -114,8 +129,11 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
 //            liveRender.destroy();
             liveRender = null;
         }
+        if (null != mediaRecorderHelper) {
+            mediaRecorderHelper.destroy();
+        }
         mSurface = null;
-        mGLSurfaceView = null;
+
     }
 
     public void setCameraId(String cameraId) {
@@ -134,8 +152,28 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
     }
 
     @Override
-    public void recVideo() {
+    public void startRecVideo() {
+        final File dir = context.getExternalFilesDir(null);
+        File mp4File = new File(dir.getAbsoluteFile() + "/" + System.currentTimeMillis() + ".mp4");
+        try {
+            cameraHelper.stopPreview();
+            mediaRecorderHelper.start(mp4File);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "recvideo error", Toast.LENGTH_SHORT).show();
+        }
+    }
 
+    @Override
+    public void stopRecVideo() {
+        mediaRecorderHelper.stop();
+        cameraHelper.stopPreview();
+        cameraHelper.startPreview();
+    }
+
+    @Override
+    public boolean isRecordingVideo() {
+        return (mediaRecorderHelper != null) ? mediaRecorderHelper.isRecordingVideo() : false;
     }
 
     @Override
@@ -154,15 +192,15 @@ public class LivePresenter extends AbsPresenter implements ILive, GLSurfaceView.
             using = true;
             cameraHelper.destroy();
 //            liveRender.destroy();
-            mGLSurfaceView.onPause();
-            mGLSurfaceView.onResume();
+            getGLSurfaceView().onPause();
+            getGLSurfaceView().onResume();
         }
     }
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        if (mGLSurfaceView != null) {
-            mGLSurfaceView.requestRender();
+        if (getGLSurfaceView() != null) {
+            getGLSurfaceView().requestRender();
         }
     }
 

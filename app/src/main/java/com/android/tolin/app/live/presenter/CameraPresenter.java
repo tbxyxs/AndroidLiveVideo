@@ -14,7 +14,7 @@ import com.android.tolin.app.live.view.PSurfaceTexture;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class CameraPresenter extends AbsPresenter implements ILive, GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+public class CameraPresenter extends AbsPresenter implements ICamera, GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
     private CameraGLSurfaceView mGLSurfaceView;
     private CameraHelper cameraHelper;
@@ -127,10 +127,6 @@ public class CameraPresenter extends AbsPresenter implements ILive, GLSurfaceVie
 
     }
 
-    @Override
-    public void recVideo() {
-
-    }
 
     @Override
     public void addFilter(AbsFilter filter) {

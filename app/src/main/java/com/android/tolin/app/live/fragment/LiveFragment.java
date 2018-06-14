@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.AppCompatButton;
 import android.support.v7.widget.AppCompatSeekBar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -43,7 +44,10 @@ public class LiveFragment extends Fragment implements ICameraFragment {
             }
         };
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkCameraPermission();
+            boolean flag = checkCameraPermission();
+            if (flag) {
+                initView(view);
+            }
         } else {
             initView(view);
         }
@@ -53,6 +57,20 @@ public class LiveFragment extends Fragment implements ICameraFragment {
     private void initView(@NonNull View view) {
         mBeautyFilterFilter = new BeautyFilter(getResources());
         glvCamera = view.findViewById(R.id.glvCamera);
+        final AppCompatButton acbRecVideo = view.findViewById(R.id.acbRecVideo);
+        acbRecVideo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LivePresenter livePresenter = glvCamera.getPresenter();
+                if (livePresenter.isRecordingVideo()) {
+                    livePresenter.stopRecVideo();
+                    acbRecVideo.setText("recvideo");
+                } else {
+                    livePresenter.startRecVideo();
+                    acbRecVideo.setText("stop");
+                }
+            }
+        });
 //        livePresenter.setCallBackRendener(new GLSurfaceView.Renderer() {
 //            @Override
 //            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -128,13 +146,15 @@ public class LiveFragment extends Fragment implements ICameraFragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void checkCameraPermission() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+    private boolean checkCameraPermission() {
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(),
-                    new String[]{Manifest.permission.CAMERA},
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
                     Constant.CAMERA_ACCESS_REQUEST_CODE);
-            //    Log.v(TAG, "checkCameraPermission");
+            return false;
         }
+        return true;
     }
 
 }

@@ -12,13 +12,29 @@
         android:layout_height="match_parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <android.support.v7.widget.AppCompatButton
-        android:id="@+id/acbSwitch"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="切换"
-        app:layout_constraintTop_toTopOf="@+id/glvCamera"/>
+        android:orientation="horizontal"
+        >
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acbSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#55ffffff"
+            android:text="切换"
+            android:textSize="12sp"
+            />
+
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acbRecVideo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#55ffffff"
+            android:text="recvideo"
+            android:textSize="12sp"/>
+    </LinearLayout>
 
     <android.support.v7.widget.AppCompatSeekBar
         android:id="@+id/mSeek"
@@ -26,6 +42,6 @@
         android:layout_height="31dp"
         android:layout_alignParentTop="true"
         android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/acbSwitch"
+        android:visibility="gone"
         tools:ignore="MissingConstraints"/>
 </android.support.constraint.ConstraintLayout>

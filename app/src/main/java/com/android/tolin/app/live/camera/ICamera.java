@@ -11,9 +11,15 @@ public interface ICamera<T> {
 
     void stopPreview();
 
-    void pause();
+    /**
+     * 生命周期
+     */
+    void onPause();
 
-    void resume();
+    /**
+     * 生命周期
+     */
+    void onResume();
 
     void destory();
 
@@ -40,6 +46,29 @@ public interface ICamera<T> {
      */
     Size computerPreviewSize(AbsGLSurfaceView surfaceView);
 
+    /**
+     * 设置帧率
+     *
+     * @param fps
+     */
+    void setCameraFps(int fps);
+
+    /**
+     * 计算视频与视图的匹配尺寸比例
+     *
+     * @param surfaceView
+     * @return
+     */
+    Size computerVideoSize(AbsGLSurfaceView surfaceView);
+
+    /**
+     * 获取录制视频大小
+     *
+     * @return
+     */
+    Size getCameraVideoSize();
+
+    T getCamera();
 
     interface TakePhotoCallback {
         void onTakePhoto(byte[] bytes, int width, int height);

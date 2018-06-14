@@ -32,9 +32,9 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
      */
 
     public CameraHelper(AbsGLSurfaceView glSurfaceView, String cameraId, PSurfaceTexture surfaceTexture) {
-        this.glSurfaceView =new WeakReference<>(glSurfaceView);
+        this.glSurfaceView = new WeakReference<>(glSurfaceView);
         this.cameraId = cameraId;
-        this.surfaceTexture =new WeakReference<>(surfaceTexture);
+        this.surfaceTexture = new WeakReference<>(surfaceTexture);
         this.appContext = glSurfaceView.getContext().getApplicationContext();
         initCamera();
     }
@@ -86,9 +86,7 @@ public class CameraHelper<T extends ICamera> implements ICHelper<T> {
 
     @Override
     public void startPreview() {
-        if (!mCamera.isPreview()) {
-            mCamera.startPreview();
-        }
+        mCamera.startPreview();
     }
 
     @Override
